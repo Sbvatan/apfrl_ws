@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <node name="lidar_broadcaster" pkg="tf2_ros" exec="static_transform_publisher" args="0.27257606387138367 0.005380717571824789 0.4224352538585663 0 0 0 1 base_link laser"/>
+  <node name="zed2_broadcaster" pkg="tf2_ros" exec="static_transform_publisher" args="-0.14367449283599854 -0.015248768031597137 -0.8710892796516418 0 0 0 zed_camera_link base_link"/>
+  
+</launch>

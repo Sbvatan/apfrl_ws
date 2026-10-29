@@ -1,0 +1,77 @@
+<launch>
+  <!-- ===================== -->
+  <!-- Declare Launch Arguments -->
+  <!-- ===================== -->
+  <arg name="camera_model" default="OAK-D" description="Camera model (OAK-D or OAK-D-LITE)."/>
+  <arg name="tf_prefix" default="oak" description="Camera name prefix for TFs."/>
+  <arg name="base_frame" default="oak-d_frame" description="Name of the base link."/>
+  <arg name="parent_frame" default="oak-d-base-frame" description="Parent link that connects the OAK base to robot TF."/>
+  <arg name="cam_pos_x" default="0.0" description="Camera X position wrt base frame."/>
+  <arg name="cam_pos_y" default="0.0" description="Camera Y position wrt base frame."/>
+  <arg name="cam_pos_z" default="0.0" description="Camera Z position wrt base frame."/>
+  <arg name="cam_roll" default="0.0" description="Camera roll wrt base frame."/>
+  <arg name="cam_pitch" default="0.0" description="Camera pitch wrt base frame."/>
+  <arg name="cam_yaw" default="0.0" description="Camera yaw wrt base frame."/>
+  <arg name="mode" default="depth" description="Set to 'depth' or 'disparity'."/>
+  <arg name="lrcheck" default="true" description="Enable left-right check."/>
+  <arg name="extended" default="false" description="Enable extended disparity."/>
+  <arg name="subpixel" default="true" description="Enable subpixel disparity."/>
+  <arg name="confidence" default="200" description="Confidence threshold."/>
+  <arg name="LRchecktresh" default="5" description="Left-right check threshold."/>
+  <arg name="monoResolution" default="720p" description="Mono camera resolution (800p, 720p, 400p, 480p)."/>
+
+ <!-- ===================== -->
+  <!-- Include URDF Launch -->
+  <!-- ===================== -->
+  <include file="$(find-pkg-share depthai_descriptions)/launch/urdf_launch.py">
+    <arg name="tf_prefix" value="$(var tf_prefix)"/>
+    <arg name="camera_model" value="$(var camera_model)"/>
+    <arg name="base_frame" value="$(var base_frame)"/>
+    <arg name="parent_frame" value="$(var parent_frame)"/>
+    <arg name="cam_pos_x" value="$(var cam_pos_x)"/>
+    <arg name="cam_pos_y" value="$(var cam_pos_y)"/>
+    <arg name="cam_pos_z" value="$(var cam_pos_z)"/>
+    <arg name="cam_roll" value="$(var cam_roll)"/>
+    <arg name="cam_pitch" value="$(var cam_pitch)"/>
+    <arg name="cam_yaw" value="$(var cam_yaw)"/>
+  </include>
+
+<!-- ===================== -->
+  <!-- Stereo Node -->
+  <!-- ===================== -->
+  <node pkg="depthai_examples" exec="stereo_node" output="screen">
+    <param name="tf_prefix" value="$(var tf_prefix)"/>
+    <param name="mode" value="$(var mode)"/>
+    <param name="lrcheck" value="$(var lrcheck)"/>
+    <param name="extended" value="$(var extended)"/>
+    <param name="subpixel" value="$(var subpixel)"/>
+    <param name="confidence" value="$(var confidence)"/>
+    <param name="LRchecktresh" value="$(var LRchecktresh)"/>
+    <param name="monoResolution" value="$(var monoResolution)"/>
+  </node>
+  
+  <!-- Alternatively: launch convert_metric_node and point_cloud_xyzi as standalone nodes -->
+  <node pkg="depth_image_proc" exec="convert_metric_node" name="convert_metric_node" output="screen">
+    <remap from="image_raw" to="/stereo/depth"/>
+    <remap from="camera_info" to="/stereo/camera_info"/>
+    <remap from="image" to="/stereo/converted_depth"/>
+  </node>
+
+  <node pkg="depth_image_proc" exec="point_cloud_xyzi_node" name="point_cloud_xyzi" output="screen">
+    <remap from="depth/image_rect" to="/stereo/converted_depth"/>
+    <remap from="intensity/image_rect" to="/right/image_rect"/>
+    <remap from="intensity/camera_info" to="/right/camera_info"/>
+    <remap from="points" to="/stereo/points"/>
+  </node>
+  
+  
+  
+    
+  <!-- ===================== -->
+  <!-- RViz2 Node -->
+  <!-- ===================== -->
+  <node pkg="rviz2"
+        exec="rviz2"
+        output="screen"
+        args="--display-config $(find-pkg-share depthai_examples)/rviz/stereoPointCloud.rviz"/>
+</launch>

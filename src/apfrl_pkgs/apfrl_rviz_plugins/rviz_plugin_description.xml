@@ -1,0 +1,12 @@
+<library path="apfrl_rviz_plugins">
+
+  <class name="apfrl_rviz_plugins/Obstacles"
+         type="apfrl_rviz_plugins::ObstaclesDisplay"
+         base_class_type="rviz_common::Display">
+    <description>
+      Renders apfrl_interfaces/msg/Obstacles as cylinder primitives in RViz2.
+    </description>
+    <message_type>apfrl_interfaces/msg/Obstacles</message_type>
+  </class>
+
+</library>

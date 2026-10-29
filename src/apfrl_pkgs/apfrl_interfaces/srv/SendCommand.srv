@@ -1,0 +1,7 @@
+int32 command
+int32[] int_params
+float32[] float_params
+string str_param
+---
+bool success
+string message

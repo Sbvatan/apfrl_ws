@@ -1,0 +1,20 @@
+<launch>
+    <node exec="rviz2" name="rviz2" pkg="rviz2" args="-d $(find-pkg-share apfrl)/rviz/apfrl.rviz" output="screen"/>
+    <node pkg="obs_generator_rplidar" exec="obs_generator_rplidar_node" name="obs_generator_rplidar" output="screen">
+        <remap from="humans" to="zed_node/obj_det/objects" />
+    </node>
+
+    <node pkg="apfrl" exec="social_apfrl_node" name="social_apfrl" output="screen" >
+        <remap from="humans" to="zed_node/obj_det/objects" />
+        <param name="model_path" value="$(find-pkg-share apfrl)/models/social_apfrl_model.pt" />
+        <param name="rate" value="3.0" />
+
+    </node>
+
+    <node pkg="apf" exec="apf_node" name="apf" output="screen">
+        <remap from="cmd_vel" to="cmd_vel" />
+        <param name="xMax" value="1.0" />
+        <param name="use_apfrl" value="true" />
+    </node>
+    
+</launch>

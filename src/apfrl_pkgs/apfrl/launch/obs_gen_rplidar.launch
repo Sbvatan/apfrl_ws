@@ -1,0 +1,13 @@
+<launch>
+    <!-- <param name="model_path" value="$(find apfrl)/models/apfrl_model.pt" />
+    <param name="use_apfrl" value="false" />
+    <param name="apf/xMax" value="1.0" />	 -->
+
+    <node exec="rviz2" name="rviz2" pkg="rviz2" args="-d $(find apfrl)/rviz/apfrl.rviz" output="screen"/>
+    <node pkg="obs_generator_rplidar" exec="obs_generator_rplidar_node" name="obs_generator_rplidar" output="screen" />
+<!-- 
+    <node pkg="apf" type="apf_node" name="apf" output="screen">
+        <remap from="cmd_vel" to="segway/cmd_vel"/>
+    </node> -->
+
+</launch>

@@ -1,0 +1,102 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Tool Properties
+    Name: Tool Properties
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Plane Cell Count: 60
+      Reference Frame: <Fixed Frame>
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Enabled: true
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+        Durability Policy: Transient Local
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: false
+    - Class: rviz_default_plugins/LaserScan
+      Name: LaserScan
+      Enabled: true
+      Size (m): 0.05
+      Style: Flat Squares
+      Color Transformer: FlatColor
+      Color: 239; 41; 41
+      Topic:
+        Value: /scan
+        Reliability Policy: Best Effort
+        Depth: 5
+    - Class: apfrl_rviz_plugins/Obstacles
+      Name: Obstacles (obs_generator)
+      Enabled: true
+      Topic:
+        Value: /obstacles
+        Depth: 5
+    - Class: rviz_default_plugins/Odometry
+      Name: Odometry (ground truth)
+      Enabled: true
+      Keep: 200
+      Position Tolerance: 0.05
+      Angle Tolerance: 0.1
+      Shape:
+        Value: Arrow
+        Color: 52; 101; 164
+        Shaft Length: 0.2
+        Head Length: 0.08
+      Topic:
+        Value: /odom_gt
+        Depth: 5
+    - Class: rviz_default_plugins/Pose
+      Name: Final goal
+      Enabled: true
+      Color: 78; 154; 6
+      Shape: Arrow
+      Topic:
+        Value: /goal_pose
+        Depth: 5
+    - Class: rviz_default_plugins/Pose
+      Name: APF-RL waypoint
+      Enabled: true
+      Color: 245; 121; 0
+      Shape: Axes
+      Topic:
+        Value: /goal
+        Depth: 5
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: odom
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/Measure
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Value: /goal_pose
+    - Class: rviz_default_plugins/PublishPoint
+      Topic:
+        Value: /clicked_point
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Name: Current View
+      Scale: 40
+      X: 0
+      Y: 0
+      Target Frame: <Fixed Frame>
+Window Geometry:
+  Height: 900
+  Width: 1400

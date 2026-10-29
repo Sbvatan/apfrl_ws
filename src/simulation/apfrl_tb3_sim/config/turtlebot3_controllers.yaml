@@ -1,0 +1,48 @@
+# turtlebot3_controllers.yaml
+#
+# enable_odom_tf is false: gt_odom_gz publishes odom->base_footprint from gz
+# ground truth (what the policy was trained on), and a frame cannot have two
+# parents. /diff_drive_controller/odom (wheel odometry) is still published.
+
+controller_manager:
+  ros__parameters:
+    update_rate: 30  # Hz
+    use_sim_time: true
+
+    # 1. The controller that calculates differential drive kinematics
+    diff_drive_controller:
+      type: diff_drive_controller/DiffDriveController
+
+    # 2. The broadcaster that publishes joint states (wheel positions/velocities) to TF
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+# Configuration for the Differential Drive Controller
+diff_drive_controller:
+  ros__parameters:
+    left_wheel_names: ["wheel_left_joint"]
+    right_wheel_names: ["wheel_right_joint"]
+
+    wheel_separation: 0.160
+    wheel_radius: 0.033
+
+    base_frame_id: base_footprint
+    odom_frame_id: odom
+    enable_odom_tf: false
+
+    # Limits
+    linear.x.has_velocity_limits: true
+    linear.x.max_velocity: 1.5  # m/s
+    linear.x.min_velocity: -1.5
+    linear.x.has_acceleration_limits: true
+    linear.x.max_acceleration: 2.0
+    linear.x.min_acceleration: -2.0
+
+    angular.z.has_velocity_limits: true
+    angular.z.max_velocity: 3.141592  # rad/s
+    angular.z.min_velocity: -3.141592
+    angular.z.has_acceleration_limits: true
+    angular.z.max_acceleration: 4.0
+    angular.z.min_acceleration: -4.0
+
+    use_stamped_vel: true

@@ -1,0 +1,23 @@
+apf:
+  ros__parameters:
+    # --- Robot geometry ---
+    robot_radius: 0.4           # Robot radius [m]
+
+    # --- Velocity limits ---
+    # Must match semprob_robot/params/navigation/apf.yaml and the envelope the
+    # training launches give apf_node, because the RL policies emit waypoints
+    # assuming this controller can realise them. Was 0.2 / -0.1 / pi/8, a
+    # quarter of the trained speed and a fifth of the turn rate.
+    max_linear_velocity: 0.8    # Maximum linear velocity [m/s]
+    min_linear_velocity: -0.3   # Minimum linear velocity (negative = reverse allowed) [m/s]
+    max_angular_velocity: 1.047   # Maximum angular velocity [rad/s]  (pi/3 ≈ 1.047)
+
+    # --- APF potential parameters ---
+    min_gamma: 0.0              # Threshold for attractive potential (stop if gamma < this)
+    goal_distance_threshold: 0.01  # Distance threshold for goal attainment in potential [m]
+    neighborhood_radius: 3.0    # Only consider obstacles within this radius [m]
+    apf_k_coefficient: 1.5     # Multiplier for obstacle count to compute apf_k
+
+    # --- Navigation action parameters ---
+    goal_reach_threshold: 0.1   # Distance to consider goal reached in action [m]
+    control_period: 0.1         # Minimum period between velocity commands [s]

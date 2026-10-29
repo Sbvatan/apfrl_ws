@@ -1,0 +1,15 @@
+<launch>
+    <param name="model_path" value="$(find apfrl)/models/apfrl_model.pt" />
+    <param name="use_apfrl" value="true" />
+    <param name="apfrl/rate" value="3.0" />
+
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find apfrl)/rviz/apfrl.rviz" output="screen"/>
+    <node pkg="obs_generator" type="obs_generator_node" name="obs_generator" output="screen"/>
+
+    <node pkg="apfrl" type="apfrl_node" name="apfrl" output="screen" >
+    </node>
+
+    <node pkg="apf" type="apf_node" name="apf" output="screen">
+        <remap from="cmd_vel" to="segway/cmd_vel" />
+    </node>
+</launch>

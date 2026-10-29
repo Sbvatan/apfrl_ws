@@ -1,0 +1,11 @@
+slam_toolbox:
+  ros__parameters:
+    # Directory to save/load pose graphs
+    map_serialization_directory: "~/BaggRob/bagrob_pkgs/maps/"
+    # The base name for the files (will result in my_map.posegraph, my_map.data)
+    map_file_name: "my_office_map"
+    
+    # Mapping mode
+    mode: mapping 
+    
+    # ... other params (odom_frame, scan_topic, etc.)
