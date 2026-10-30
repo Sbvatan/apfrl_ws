@@ -46,6 +46,11 @@ public:
 
   std::string model_path_;
   double rate;
+  // Distance to the action goal at which the navigation action succeeds and the
+  // robot is told to hold. Keep it >= ApfRl::kReachDistance (0.2 m): inside that
+  // radius ApfRl::Step already outputs the stop waypoint, so the robot parks
+  // there and a smaller threshold is never reached -- the goal never finishes.
+  double goal_reach_threshold_;
 
 private:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr target_sub_;

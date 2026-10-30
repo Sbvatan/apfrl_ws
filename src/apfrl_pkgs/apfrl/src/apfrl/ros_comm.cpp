@@ -20,8 +20,10 @@ RosComm::RosComm(): Node("apfrl"),apfrl_input_(), is_new_target_(false), is_new_
     // planner, so a policy can never be run against the wrong scaling.
     this->declare_parameter("obs_profile","barn");
     this->declare_parameter("rate",3.0);
+    this->declare_parameter("goal_reach_threshold",0.2);  // see ros_comm.h
     this->get_parameter("model_path",model_path_);
     this->get_parameter("rate",rate);
+    this->get_parameter("goal_reach_threshold",goal_reach_threshold_);
 
     RCLCPP_INFO(this->get_logger(),"Model Path: %s",model_path_.c_str());
     
@@ -422,9 +424,9 @@ void RosComm::HumansCallback(const apfrl_interfaces::msg::Obstacles::SharedPtr h
 // already does. The waypoint is in base_link because that is the frame the
 // policy emits it in; apf_node's TargetCallback transforms from the header.
 //
-// A stop is expressed as a waypoint at the robot's own origin: apf.yaml's
-// goal_distance_threshold (0.01 m) then puts apf_node in its at-goal hold and
-// it commands zero, so there is no second authority publishing velocity.
+// A stop is expressed as a waypoint at the robot's own origin: apf_node
+// latches it as a hold and commands zero until the next waypoint, so there is
+// no second authority publishing velocity.
 void RosComm::PublishWaypoint(double wp_x, double wp_y, double apf_k)
 {
     geometry_msgs::msg::PoseStamped wp_msg{};
@@ -505,15 +507,23 @@ void RosComm::executeNavigateToPose(std::shared_ptr<rclcpp_action::ServerGoalHan
     
     TransformPose(target_pose, "base_link");
 
+    // Per goal, so `ros2 param set /apfrl goal_reach_threshold` takes effect
+    // on the next goal without a restart.
+    this->get_parameter("goal_reach_threshold", goal_reach_threshold_);
+    if (goal_reach_threshold_ < 0.2)
+    {
+        RCLCPP_WARN(this->get_logger(),
+                    "goal_reach_threshold %.2f m is below the 0.2 m at which the policy stops "
+                    "the robot; this goal may never finish", goal_reach_threshold_);
+    }
     double distance_to_target = std::hypot(target_pose.x, target_pose.y);
-    while (rclcpp::ok() && distance_to_target > 0.1)
+    while (rclcpp::ok() && distance_to_target > goal_reach_threshold_)
     {
         if (stop_requested_.load())
         {
             RCLCPP_INFO(this->get_logger(), "Goal canceled");
-            // Stop by asking apf_node to hold: a waypoint at the robot's own
-            // origin is inside apf.yaml's goal_distance_threshold, so its
-            // at-goal branch commands zero. No second velocity authority.
+            // Stop by asking apf_node to hold (see PublishWaypoint). No
+            // second velocity authority.
             PublishWaypoint(0.0, 0.0, 0.0);
             if (goal_handle->is_canceling())
             {
@@ -612,6 +622,10 @@ void RosComm::executeNavigateToPose(std::shared_ptr<rclcpp_action::ServerGoalHan
     else
     {
         RCLCPP_INFO(this->get_logger(), "Goal reached");
+        // Hold, as the cancel/abort paths do. Without it the policy's last
+        // waypoint stays apf_node's target and the robot keeps driving at it
+        // after the goal has succeeded.
+        PublishWaypoint(0.0, 0.0, 0.0);
         result->success = true;
         goal_handle->succeed(result);
     }

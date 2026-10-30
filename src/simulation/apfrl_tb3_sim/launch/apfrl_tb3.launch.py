@@ -9,7 +9,7 @@ Starts:
                         name "default"; see that file)
   turtlebot3_burger     spawned at (x, y, yaw); diff-drive via gz_ros2_control
   gt_odom_gz            ground-truth odometry: /odom_gt and odom->base_footprint
-  ros_gz_bridge         /scan, /imu, camera, /clock
+  ros_gz_bridge         /scan, /imu, ZED 2 (/zed/rgb, /zed/depth), /clock
   obs_generator         /scan -> /obstacles (obstacle clusters for the APF)
   apf_node              potential field; drives the robot
   apfrl_node            the policy: picks a waypoint (/goal) and gain (/apf_k)
@@ -89,11 +89,16 @@ def generate_launch_description():
         arguments=[
             '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
             '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
-            '/camera/image@sensor_msgs/msg/Image[gz.msgs.Image',
-            '/camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
-            '/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
+            '/zed/image@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/zed/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/zed/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
         ],
+        # The ZED 2's ROS names on the real robot (semprob_robot's
+        # config/ros_gz_bridge.yaml), so camera consumers run here unchanged.
+        remappings=[('/zed/image', '/zed/rgb/image_rect_color'),
+                    ('/zed/depth_image', '/zed/depth/image_raw'),
+                    ('/zed/camera_info', '/zed/rgb/camera_info')],
         output='screen',
     )
 
@@ -137,6 +142,12 @@ def generate_launch_description():
             # Observation scaling of the TurtleBot3-room policies.
             'obs_profile': 'legacy',
             'rate': 3.0,
+            # Distance (m) at which a goal counts as reached and the robot is
+            # told to stop. Not one of the trained settings: safe to tune, live,
+            # with `ros2 param set /apfrl goal_reach_threshold <m>` (read per
+            # goal). Keep it >= 0.2: inside 0.2 m the policy already outputs its
+            # stop, so a smaller value parks the robot and the goal never ends.
+            'goal_reach_threshold': 0.2,
         }],
         remappings=[('/odometry/filtered', '/odom_gt')],
         output='screen',

@@ -87,6 +87,10 @@ private:
   // to brake, so an episode began with up to 0.79 m/s of inherited motion
   // and 0.25 m off its spawn cell.
   std::atomic<bool> enabled_{true};
+  // Set while the latest /goal is apfrl's stop, a waypoint at the robot's own
+  // origin in base_link: the controller then commands zero until the next
+  // waypoint instead of steering back to where that stop was issued.
+  std::atomic<bool> holding_{false};
   bool is_new_odom_;
   std::atomic<bool> stop_requested_{false};
   std::mutex execution_mutex_;

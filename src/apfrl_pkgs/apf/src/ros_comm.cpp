@@ -257,6 +257,15 @@ void RosComm::ControlTimerCallback()
     }
     execution_mutex_.unlock();
 
+    if (holding_.load())
+    {
+        // See TargetCallback. The next waypoint clears this.
+        geometry_msgs::msg::TwistStamped out_msg{};
+        out_msg.header.stamp = this->get_clock()->now();
+        vel_pub_->publish(out_msg);
+        return;
+    }
+
     Input apf_input{};
     Velocity velocity{};
     bool got_data = GetData(apf_input);
@@ -303,6 +312,17 @@ void RosComm::TargetCallback(const geometry_msgs::msg::PoseStamped::SharedPtr ta
     apf_data_.target.frame = target_msg->header.frame_id;
     is_new_target_ = true;
     is_got_target_ = true;
+    // apfrl (and social_apfrl) say "stop" with a waypoint at the robot's own
+    // origin. Run as a target, GetData pins it in odom where the robot was at
+    // that instant; the robot is still braking (0.16 m from 0.8 m/s in the TB3
+    // sim, whose diff-drive brakes at 2 m/s^2) and coasts out of
+    // goal_distance_threshold, and the
+    // field, which has no slow-down, drives it back at full speed. It
+    // overshoots again and never settles: the robot shuttles across the goal
+    // at +/-max speed for as long as the node runs. So hold instead.
+    holding_.store(target_msg->header.frame_id == "base_link" &&
+                   target_msg->pose.position.x == 0.0 &&
+                   target_msg->pose.position.y == 0.0);
 }
 
 bool RosComm::GetData(Input &input)
@@ -561,7 +581,24 @@ void RosComm::executeNavigateToPose(std::shared_ptr<rclcpp_action::ServerGoalHan
 
     RCLCPP_INFO(this->get_logger(), "New Target Recieved in frame %s", target_pose.frame.c_str());
 
-    TransformPose(target_pose, "base_link");
+    // TransformPose throws on any TF failure, and this runs on a detached
+    // thread, so an uncaught one std::terminates the whole node: a goal in a
+    // frame the tree lacks (map, in a sim with only odom), or a loop from a
+    // second robot's /tf on the same ROS domain.
+    try
+    {
+        TransformPose(target_pose, "base_link");
+    }
+    catch (const tf2::TransformException &ex)
+    {
+        RCLCPP_WARN(this->get_logger(), "Aborting goal: cannot transform target from '%s': %s",
+                    target_pose.frame.c_str(), ex.what());
+        is_new_target_ = false;
+        is_got_target_ = false;
+        result->success = false;
+        goal_handle->abort(result);
+        return;
+    }
 
     double distance_to_target = std::hypot(target_pose.x, target_pose.y);
     while (rclcpp::ok() && distance_to_target > goal_reach_threshold_)
@@ -604,7 +641,18 @@ void RosComm::executeNavigateToPose(std::shared_ptr<rclcpp_action::ServerGoalHan
         // Transform target to base_link each iteration for accurate distance
         // (robot is always at origin in base_link frame)
         Pose target_bl = map_target;
-        TransformPose(target_bl, "base_link");
+        try
+        {
+            TransformPose(target_bl, "base_link");
+        }
+        catch (const tf2::TransformException &ex)
+        {
+            // As in GetData, a TF hiccup costs this cycle, not the node.
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                                 "[ACTION] target transform failed: %s", ex.what());
+            rclcpp::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
         distance_to_target = std::hypot(target_bl.x, target_bl.y);
 
         RCLCPP_INFO(this->get_logger(), "TARGET (map): (%.2f, %.2f), DISTANCE: %.2f",
@@ -654,6 +702,15 @@ void RosComm::executeNavigateToPose(std::shared_ptr<rclcpp_action::ServerGoalHan
     else
     {
         RCLCPP_INFO(this->get_logger(), "Goal reached");
+        // Brake, as the cancel paths do. is_got_target_ goes false below, so
+        // nothing is published after this, and the robot would otherwise keep
+        // the loop's last full-speed command until the base times it out
+        // (0.5 s for diff_drive_controller, ~0.4 m past the goal) or, on a
+        // base without a cmd_vel timeout, indefinitely.
+        Velocity zero_vel{};
+        zero_vel.linear = 0.0;
+        zero_vel.angular = 0.0;
+        PublishVelocity(zero_vel);
         result->success = true;
         goal_handle->succeed(result);
     }

@@ -175,13 +175,18 @@
     </inertial>
   </link>
 
-  <joint name="camera_rgb_joint" type="fixed">
-    <origin xyz="0.003 0.011 0.909" rpy="0 0 0"/>
+  <!-- ZED 2, as on the real robot (SempRob_ws semprob_robot, semprob.urdf.xacro).
+       The pose is that URDF's base_link -> zed_camera_center with the pan/tilt
+       head at zero: 1.2389 m above the ground, 5.2 deg down, 1.1 deg left. The
+       burger's base_link is 0.010 m up, so z here is 1.2289: the image is taken
+       from the real camera's viewpoint, not the burger's. -->
+  <joint name="zed_camera_center_joint" type="fixed">
+    <origin xyz="0.0426 -0.0063 1.2289" rpy="-0.0011 0.0911 0.0185"/>
     <parent link="base_link"/>
-    <child link="depth_camera"/>
+    <child link="zed_camera_center"/>
   </joint>
 
-  <link name="depth_camera">
+  <link name="zed_camera_center">
     <!-- Negligible mass: fixed joint, inertia contribution intentionally omitted.
            Zero inertia causes physics instability; 1e-9 is numerically safe. -->
     <inertial>
@@ -191,17 +196,25 @@
     <!-- No collision: camera is visual-only for sim-to-real transfer purposes -->
     <visual name="visual">
       <geometry>
-        <mesh filename="file://$(find apfrl_tb3_sim)/meshes/kinect.dae" />
+        <mesh filename="file://$(find apfrl_tb3_sim)/meshes/zed2.stl"/>
       </geometry>
+      <material name="dark"/>
     </visual>
   </link>
 
-  <joint name="camera_rgb_optical_joint" type="fixed">
-    <origin xyz="0 0 0" rpy="-1.57 0 -1.57"/>
-    <parent link="depth_camera"/>
-    <child link="camera_rgb_optical_frame"/>
+  <joint name="zed_left_camera_joint" type="fixed">
+    <origin xyz="0 0.06 0" rpy="0 0 0"/>
+    <parent link="zed_camera_center"/>
+    <child link="zed_left_camera_frame"/>
   </joint>
-  <link name="camera_rgb_optical_frame"/>
+  <link name="zed_left_camera_frame"/>
+
+  <joint name="zed_left_camera_optical_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="-1.5707963267948966 0 -1.5707963267948966"/>
+    <parent link="zed_left_camera_frame"/>
+    <child link="zed_left_camera_optical_frame"/>
+  </joint>
+  <link name="zed_left_camera_optical_frame"/>
 
 
 </robot>

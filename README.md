@@ -68,7 +68,7 @@ colcon build --symlink-install
 ## Run
 
 ```bash
-source apfrl_ws/install/setup.bash
+source install/setup.bash
 ros2 launch apfrl_tb3_sim apfrl_tb3.launch.py
 ```
 
